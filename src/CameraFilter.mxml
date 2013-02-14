@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml" layout="horizontal" creationComplete="initCam()" width="800" height="600" >
+			<mx:Script>
+		<![CDATA[
+			import mx.controls.Image;
+			import mx.graphics.codec.JPEGEncoder;
+			import mx.core.BitmapAsset;
+		    public var vid:Video = new Video();
+		    public var img:Image = new Image;
+		    
+		    public var oldFrame:BitmapData;
+		    public var newFrame:BitmapData;
+		    
+		    
+			public function initCam():void{
+				var cam:Camera = Camera.getCamera();
+				if(cam != null){
+					trace('there is a camera');
+				} else{
+					trace('there is no camera');
+				}
+				// The matrix is a 3x3 kernel for the convolution
+				var matrix:Array = [0, -1, 0,
+                                     -1, 4, -1,
+                                     0, -1, 0];
+                var colorMatrix:Array = [.33, .33, .33, 0, 0,
+                                         .33, .33, .33, 0, 0,
+                                         .33, .33, .33, 0, 0,
+                                           0,   0,   0, 1, 0];
+               var convolution:ConvolutionFilter = new ConvolutionFilter();
+               var colorFilter:ColorMatrixFilter = new ColorMatrixFilter(colorMatrix);
+               
+               var blurFilter:BlurFilter = new BlurFilter(10, 10, 10);
+               convolution.matrixX = 3;
+               convolution.matrixY = 3;
+               convolution.matrix = matrix;
+               convolution.divisor = .5; 
+				
+				//var vid:Video = new Video();
+				
+				vid.attachCamera(cam);
+				vid.filters = [colorFilter, convolution, blurFilter]
+				target.width = vid.width;
+				target.height = vid.height;
+				target.addChild(vid);
+				
+				// init the old frame
+				//var bitmapDate:BitmapData = new BitmapData(vid.width, vid.height);
+				//bitmapData.draw(vid);
+				oldFrame = new BitmapData(vid.width, vid.height);
+				newFrame = new BitmapData(vid.width, vid.height);
+
+				saveOld();
+				saveNew();
+				
+				
+				
+			}
+			
+			public function onFrameEnter(e:Event):void{
+				if(getTimer() % 3 == 0){
+				saveNew();
+				compare();
+				saveOld();
+				}
+			}
+			
+			public function saveOld():void{
+				oldFrame.draw(vid);
+				old.source = new BitmapAsset(oldFrame);
+			}
+			
+			public function saveNew():void{
+				newFrame.draw(vid);
+				newi.source = new BitmapAsset(newFrame);
+			}
+			
+			 private function compare():void {				
+				target2.source = new BitmapAsset(BitmapData(newFrame.compare(oldFrame)));
+            }
+			
+
+			
+			
+		]]>
+	</mx:Script>
+	<mx:VBox>
+		<mx:HBox>
+				<mx:UIComponent id="target" width="320" height="240" />
+	            <mx:Image id="target2" width="320" height="240"/>
+		</mx:HBox>
+		
+		<mx:HBox>
+			<mx:Image id="old" width="320" height="240"/>
+			<mx:Image id="newi" width="320" height="240"/>
+		</mx:HBox>
+		<mx:HBox>
+			<mx:Button label="SaveOld" click="saveOld()"/>
+			<mx:Button label="SaveNew" click="saveNew()"/>
+			<mx:Button label="compair" click="compare()"/>
+			<mx:Button label="go" click="this.addEventListener(Event.ENTER_FRAME, onFrameEnter)"/>
+		</mx:HBox>
+
+		
+    </mx:VBox>
+</mx:WindowedApplication>
